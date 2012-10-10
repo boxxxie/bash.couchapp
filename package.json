@@ -9,6 +9,7 @@
   },
   "bugs": "https://github.com/enginuitygroup/mrSystem/issues",
   "dependencies": {
+    "async":"0.1.x",
     "stringbean":"0.2.x"
     ,"mime":"1.2.x"
     ,"randexp":"0.3.x"
