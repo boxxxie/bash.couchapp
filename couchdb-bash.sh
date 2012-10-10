@@ -37,29 +37,26 @@ doc-rev() {
     echo "${etag/ETag: /}"
 }
 
-trim () {
+couch-get() {
     local url="$1"
     curl -X GET "$url"
-
-couch_get() {
 }
 
-couch_head() {
+couch-head(){
     db="$1"
     url="$host/$db"
-    echo curl -sI  "$url"
-    curl -sI  "$url"
+    echo curl -sI HEAD "$url"
+    curl -sI HEAD "$url"
 }
 
-couch_revision() {
-    db="$1";
-    url="$host/$db";
-    etag_kv=`curl -sI "$url" | grep "ETag"`;
-    return=$(trim ${etag_kv:5});
-    echo "$return";
+couch-revision(){
+    db="$1"
+    url="$host/$db"
+    etag_kv=`curl -sI "$url" | grep ETag`
+    echo ${etag_kv:5}
 }
 
-couch_push() {
+couch-push(){
     local http_type="$2"
     local url="$1"
     local file="$3"
@@ -67,25 +64,25 @@ couch_push() {
     curl -X "$http_type" "$url" -H "Content-Type: application/json" -d @"$file"
 }
 
-couch_post() {
+couch-post() {
     local url="$1"
     local file="$2"
     couch-push "$url" POST "$file"
 }
 
-couch_put() {
+couch-put() {
     local url="$1"
     local file="$2"
     couch-push "$url" PUT "$file"
 }
 
-couch_upload() {
+couch-upload() {
     local db_url="$1"
     local file_path="$2"
     local mime="$3"
     local rev=$(doc-rev $db_url)
     #rev_clean=$(trim "$rev")
-    rev=$(couch_revision "$db")
+    rev=`couch-revision "$db"`
     echo "rev = $rev"
     local rev_no_quotes=$(trim "${rev//\"}")
     echo "file name = $file_path"
@@ -128,7 +125,6 @@ couch-upload-dir-bulk() {
             exit 0
         fi
     done
-echo $file_index
     cd -
 }
 
