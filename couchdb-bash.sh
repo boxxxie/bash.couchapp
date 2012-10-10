@@ -84,7 +84,6 @@ couch-upload-dir() {
         if [ -f "$file" ]
         then
             local file_rel_path="${file:2}";
-            echo file "$file_rel_path"; 
             local mimetype=$(xdg-mime query filetype "$file_rel_path")
             couch-upload "$url" "$file_rel_path" "$mimetype"
         fi
@@ -92,4 +91,30 @@ couch-upload-dir() {
     cd -
 }
 
-couch-upload-dir "$1" "$2"
+couch-upload-dir-bulk() {
+    local url="$1"
+    local upload_dir="$2"
+    local file_dump="$3"
+    cd "$upload_dir"
+    find .  | while read file; do 
+        if [ -f "$file" ]
+        then
+            echo "${file:2}" >> "$file_dump"
+            echo "${file:2}" >> "$file_dump"
+            echo >> "$file_dump"
+            xdg-mime query filetype "$file" >> "$file_dump"
+            echo >> "$file_dump"
+            base64 "$file" >> "$file_dump"
+            echo >> "$file_dump"
+            exit 0
+        fi
+    done
+    cd -
+}
+
+#bulk="$3"
+#rm "$bulk"
+#touch "$bulk"
+#couch-upload-dir-bulk "$1" "$2" "$bulk"
+
+#echo done!
