@@ -1,19 +1,47 @@
 #!/bin/bash
 
-  # These functions require underscore-cli (npm install -g underscore-cli)
-  # a CouchDB instance
+  # These functions require a CouchDB instance, xdg-mime, curl, 
 
-host="$1"
-
-trim () {
-    read -rd '' $1 <<<"${!1}"
+trim() {
+    # Determine if 'extglob' is currently on.
+    local extglobWasOff=1
+    shopt extglob >/dev/null && extglobWasOff=0 
+    (( extglobWasOff )) && shopt -s extglob # Turn 'extglob' on, if currently turned off.
+    # Trim leading and trailing whitespace
+    local var=$1
+    var=${var##+([[:space:]])}
+    var=${var%%+([[:space:]])}
+    (( extglobWasOff )) && shopt -u extglob # If 'extglob' was off before, turn it back off.
+    echo -n "$var"  # Output trimmed string.
 }
 
+rawurldecode() {
+
+  # This is perhaps a risky gambit, but since all escape characters must be
+  # encoded, we can replace %NN with \xNN and pass the lot to printf -b, which
+  # will decode hex for us
+
+    printf -v REPLY '%b' "${1//%/\\x}" # You can either set a return variable (FASTER)
+
+    echo "${REPLY}"  #+or echo the result (EASIER)... or both... :p
+}
+
+couch-head() {
+    local url="$1"
+    curl -I "$url"
+}
+
+doc-rev() {
+    local url="$1"
+    local etag=$(couch-head "$url" | grep ETag)
+    echo "${etag/ETag: /}"
+}
+
+trim () {
+    local url="$1"
+    curl -X GET "$url"
+
 couch_get() {
-    db="$1"
-    url="$host/$db"
-    echo curl -sX GET "$url"
-    curl -sX GET "$url"
 }
 
 couch_head() {
@@ -32,66 +60,81 @@ couch_revision() {
 }
 
 couch_push() {
-    http="$1"
-    db="$2"
-    doc="$3"
-    url="$host/$db"
-    echo curl -X "$http" "$url" -H "'""Content-Type: application/json""'" -d @"$doc"
-    curl -X "$http" "$url" -H "'""Content-Type: application/json""'" -d @"$doc"
+    local http_type="$2"
+    local url="$1"
+    local file="$3"
+    echo curl -X "$http_type" "$url" -H "Content-Type: application/json" -d @"$file"
+    curl -X "$http_type" "$url" -H "Content-Type: application/json" -d @"$file"
 }
 
 couch_post() {
-    db="$1"
-    doc="$2"
-    couch_push POST "$db" "$doc"
+    local url="$1"
+    local file="$2"
+    couch-push "$url" POST "$file"
 }
 
 couch_put() {
-    db="$1"
-    doc="$2"
-    couch_push PUT "$db" "$doc"
+    local url="$1"
+    local file="$2"
+    couch-push "$url" PUT "$file"
 }
 
 couch_upload() {
-    db="$1"
-    file="$2"
-#    couch_response=`$(couch-get "$db")`
-#    echo "response = $couch_response"
-#    echo underscore -d "$couch_response" extract _rev
-#    rev=$(underscore -d "$couch_response" extract _rev)
+    local db_url="$1"
+    local file_path="$2"
+    local mime="$3"
+    local rev=$(doc-rev $db_url)
+    #rev_clean=$(trim "$rev")
     rev=$(couch_revision "$db")
     echo "rev = $rev"
-    echo "rev w/o quotes = ${rev//\"}"
-    safe_file=${file// /-}
-    echo "file name = $safe_file"
-    url="$host/$db/$safe_file?rev=${rev//\"}"
-    echo "$url"
+    local rev_no_quotes=$(trim "${rev//\"}")
+    echo "file name = $file_path"
+    local attachment_url="${db_url}/${file_path}?rev=${rev_no_quotes}"
+    echo "$attachment_url"
+    curl -X PUT "${attachment_url}" -H "Content-Type: ${mime}" --data-binary "@${file_path}"
     #echo curl -sX PUT "$url" -H "Content-Type: $3" --data-binary @"$file"
-    curl -sX PUT "$url" -H "Content-Type: $3" --data-binary @"$file"
 }
 
-#use: ./couchdb-bash.sh http://localhost:5984 db/doc doc.json 'application/json'
-#use: ./couchdb-bash.sh http://localhost:5984 db/doct test/doc.json 'application/json'
-#couch-upload "$testdoc" "$3" "$4"
+couch-upload-dir() {
+    local url="$1"
+    local upload_dir="$2"
+    cd "$upload_dir"
+    find .  | while read file; do 
+        if [ -f "$file" ]
+        then
+            local file_rel_path="${file:2}";
+            local mimetype=$(xdg-mime query filetype "$file_rel_path")
+            couch-upload "$url" "$file_rel_path" "$mimetype"
+        fi
+    done
+    cd -
+}
 
-dir_to_upload="$2"
-db="$3"
-
-#echo `couch-head "$db"`
-#echo `couch-revision "$db"`
-
-#exit 0
-
-cd "$dir_to_upload"
-file_index=0
-find .  | while read file_long_name; do
-    #echo "$file"
-    file=${file_long_name:2}
-    blobs[file_index]=`base64 <"$file"`
-    md5s[file_index]=`md5deep <"$file"`
-    ((file_index++))
-    couch_upload "$db" "$file"
-done
+couch-upload-dir-bulk() {
+    local url="$1"
+    local upload_dir="$2"
+    local file_dump="$3"
+    cd "$upload_dir"
+    find .  | while read file; do 
+        if [ -f "$file" ]
+        then
+            echo "${file:2}" >> "$file_dump"
+            echo "${file:2}" >> "$file_dump"
+            echo >> "$file_dump"
+            xdg-mime query filetype "$file" >> "$file_dump"
+            echo >> "$file_dump"
+            base64 "$file" >> "$file_dump"
+            echo >> "$file_dump"
+            exit 0
+        fi
+    done
 echo $file_index
-cd -
-#./couchdb-bash.sh http://localhost:5984 test/processed_doc/attachments/ test/test 
+    cd -
+}
+
+#bulk="$3"
+#rm "$bulk"
+#touch "$bulk"
+#couch-upload-dir-bulk "$1" "$2" "$bulk"
+
+#echo done!
