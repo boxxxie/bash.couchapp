@@ -42,6 +42,20 @@ couch-get() {
     curl -X GET "$url"
 }
 
+couch-head(){
+    db="$1"
+    url="$host/$db"
+    echo curl -sI HEAD "$url"
+    curl -sI HEAD "$url"
+}
+
+couch-revision(){
+    db="$1"
+    url="$host/$db"
+    etag_kv=`curl -sI "$url" | grep ETag`
+    echo ${etag_kv:5}
+}
+
 couch-push(){
     local http_type="$2"
     local url="$1"
@@ -68,12 +82,14 @@ couch-upload() {
     local mime="$3"
     local rev=$(doc-rev $db_url)
     #rev_clean=$(trim "$rev")
+    rev=`couch-revision "$db"`
     echo "rev = $rev"
     local rev_no_quotes=$(trim "${rev//\"}")
     echo "file name = $file_path"
     local attachment_url="${db_url}/${file_path}?rev=${rev_no_quotes}"
     echo "$attachment_url"
     curl -X PUT "${attachment_url}" -H "Content-Type: ${mime}" --data-binary "@${file_path}"
+    #echo curl -sX PUT "$url" -H "Content-Type: $3" --data-binary @"$file"
 }
 
 couch-upload-dir() {
