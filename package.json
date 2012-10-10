@@ -1,0 +1,33 @@
+{
+  "name": "node.couchapp",
+  "description": "inject directory structures into couchdb",
+  "version": "0.0.1",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "http://github.com:enginuitygroup/mrSystem"
+  },
+  "bugs": "https://github.com/enginuitygroup/mrSystem/issues",
+  "dependencies": {
+    "stringbean":"0.2.x"
+    ,"mime":"1.2.x"
+    ,"randexp":"0.3.x"
+    ,"messagehub":"0.0.2"
+    ,"q":"0.8.x"
+    ,"injectr":"0.4.x"
+    ,"request":"2.11.4"
+    ,"underscore":"1.x"
+    ,"underscore_extended":"*"
+    ,"optimist":"0.3.x"
+    ,"nano":"3.x"
+    ,"couchapp":"0.9.x"
+    ,"rimraf":"2.0.x"
+  },
+  "devDependencies": {
+    "mocha":"1.5.x",
+    "should":"1.2.x",
+    "chai":"1.2.x",
+    "prettyjson":"*"
+  },
+  "main":["couchapp.js"]
+}
