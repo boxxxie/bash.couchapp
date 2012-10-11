@@ -28,6 +28,7 @@ rawurldecode() {
 
 couch-head() {
     local url="$1"
+    echo curl -I "$url"
     curl -I "$url"
 }
 
@@ -40,20 +41,6 @@ doc-rev() {
 couch-get() {
     local url="$1"
     curl -X GET "$url"
-}
-
-couch-head(){
-    db="$1"
-    url="$host/$db"
-    echo curl -sI HEAD "$url"
-    curl -sI HEAD "$url"
-}
-
-couch-revision(){
-    db="$1"
-    url="$host/$db"
-    etag_kv=`curl -sI "$url" | grep ETag`
-    echo ${etag_kv:5}
 }
 
 couch-push(){
@@ -94,13 +81,11 @@ couch-upload-dir() {
     local url="$1"
     local upload_dir="$2"
     cd "$upload_dir"
-    find .  | while read file; do 
-        if [ -f "$file" ]
-        then
-            local file_rel_path="${file:2}";
-            local mimetype=$(xdg-mime query filetype "$file_rel_path")
-            couch-upload "$url" "$file_rel_path" "$mimetype"
-        fi
+    find . -type f | while read file; do 
+        local file_rel_path="${file:2}";
+        local mimetype=$(xdg-mime query filetype "$file_rel_path")
+        couch-upload "$url" "$file_rel_path" "$mimetype"
+        exit 0
     done
     cd -
 }
