@@ -28,11 +28,12 @@ rawurldecode() {
 
 couch-head() {
     local url="$1"
+    echo couch-head
     echo curl -I "$url"
     curl -I "$url"
 }
 
-doc-rev() {
+doc-revision() {
     local url="$1"
     local etag=$(couch-head "$url" | grep ETag)
     echo "${etag/ETag: /}"
@@ -67,8 +68,8 @@ couch-upload() {
     local db_url="$1"
     local file_path="$2"
     local mime="$3"
-    local rev=$(doc-rev $db_url)
-    rev=`couch-revision "$db"`
+    local rev=$(doc-revision "$db_ur"l)
+    rev=$(doc-revision "$db_url")
     echo "rev = $rev"
     local rev_no_quotes=$(trim "${rev//\"}")
     echo "file name = $file_path"
@@ -82,10 +83,9 @@ couch-upload-dir() {
     local upload_dir="$2"
     cd "$upload_dir"
     find . -type f | while read file; do 
-        local file_rel_path="${file:2}";
+        local file_rel_path="${file:2}"
         local mimetype=$(xdg-mime query filetype "$file_rel_path")
         couch-upload "$url" "$file_rel_path" "$mimetype"
-        exit 0
     done
     cd -
 }
