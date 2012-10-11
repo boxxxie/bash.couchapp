@@ -81,7 +81,6 @@ couch-upload() {
     local file_path="$2"
     local mime="$3"
     local rev=$(doc-rev $db_url)
-    #rev_clean=$(trim "$rev")
     rev=`couch-revision "$db"`
     echo "rev = $rev"
     local rev_no_quotes=$(trim "${rev//\"}")
@@ -89,7 +88,6 @@ couch-upload() {
     local attachment_url="${db_url}/${file_path}?rev=${rev_no_quotes}"
     echo "$attachment_url"
     curl -X PUT "${attachment_url}" -H "Content-Type: ${mime}" --data-binary "@${file_path}"
-    #echo curl -sX PUT "$url" -H "Content-Type: $3" --data-binary @"$file"
 }
 
 couch-upload-dir() {
@@ -131,6 +129,5 @@ couch-upload-dir-bulk() {
 #bulk="$3"
 #rm "$bulk"
 #touch "$bulk"
-#couch-upload-dir-bulk "$1" "$2" "$bulk"
-
-#echo done!
+couch-upload-dir "$1" "$2" 
+echo done!
