@@ -28,8 +28,6 @@ rawurldecode() {
 
 couch-head() {
     local url="$1"
-    echo couch-head
-    echo curl -I "$url"
     curl -I "$url"
 }
 
@@ -115,4 +113,4 @@ couch-upload-dir-bulk() {
 #rm "$bulk"
 #touch "$bulk"
 couch-upload-dir "$1" "$2" 
-echo done!
+exit 0;
