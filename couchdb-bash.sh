@@ -52,17 +52,17 @@ couch-push(){
 
 couch-post() {
     local url="$1"
-    local file="$2"
-    couch-push "$url" POST "$file"
+    local json="$2"
+    couch-push "$url" POST "$json"
 }
 
 couch-put() {
     local url="$1"
-    local file="$2"
-    couch-push "$url" PUT "$file"
+    local json="$2"
+    couch-push "$url" PUT "$json"
 }
 
-couch-upload() {
+couch-upload-file() {
     local db_url="$1"
     local file_path="$2"
     local mime="$3"
@@ -76,6 +76,18 @@ couch-upload() {
     curl -X PUT "${attachment_url}" -H "Content-Type: ${mime}" --data-binary "@${file_path}"
 }
 
+couch-upload-json() {
+    local db_url="$1"
+    local json="$2"
+    local rev=$(doc-revision "$db_ur"l)
+    rev=$(doc-revision "$db_url")
+    echo "rev = $rev"
+    local rev_no_quotes=$(trim "${rev//\"}")
+    local attachment_url="${db_url}/${file_path}?rev=${rev_no_quotes}"
+    echo "$attachment_url"
+    curl -X PUT "${attachment_url}" -H "Content-Type: ${mime}" "${json}"
+}
+
 couch-upload-dir() {
     local url="$1"
     local upload_dir="$2"
@@ -83,7 +95,7 @@ couch-upload-dir() {
     find . -type f | while read file; do 
         local file_rel_path="${file:2}"
         local mimetype=$(xdg-mime query filetype "$file_rel_path")
-        couch-upload "$url" "$file_rel_path" "$mimetype"
+        couch-upload-file "$url" "$file_rel_path" "$mimetype"
     done
     cd -
 }
@@ -93,24 +105,29 @@ couch-upload-dir-bulk() {
     local upload_dir="$2"
     local file_dump="$3"
     cd "$upload_dir"
-    find .  | while read file; do 
-        if [ -f "$file" ]
-        then
-            echo "${file:2}" >> "$file_dump"
-            echo "${file:2}" >> "$file_dump"
-            echo >> "$file_dump"
-            xdg-mime query filetype "$file" >> "$file_dump"
-            echo >> "$file_dump"
-            base64 "$file" >> "$file_dump"
-            echo >> "$file_dump"
-            exit 0
-        fi
+    doc=$(couch-get "$url")
+    #echo "$doc" | underscore print --color
+
+    echo {'"'_attachments'"' : { >> "$file_dump"
+    find . -type f | while read file; do 
+        local mime_type=$(xdg-mime query filetype "$file")
+        local file_base64=$(base64 -w 0 "$file")
+        
+        echo \
+            '"'"${file:2}"'"' : \
+            {'"contet_type"' : '"'"$mime_type"'"' \
+            ,'"data"' : '"'"$file_base64"'"' } , \
+         >> "$file_dump"
     done
+    echo }} >> "$file_dump"
+
+#working
+#    new_attachments=$(cat "$file_dump")
+#    cat "$file_dump"| underscore print --color
+#    echo "$new_attachments" | underscore print --color 
+
+# not working
+#    echo "$new_attachments" | underscore extend "$doc" |  underscore print --color 
+
     cd -
 }
-
-#bulk="$3"
-#rm "$bulk"
-#touch "$bulk"
-couch-upload-dir "$1" "$2" 
-exit 0;
