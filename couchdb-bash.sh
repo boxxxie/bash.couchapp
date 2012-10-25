@@ -135,7 +135,10 @@ dir-to-couchdb-json() {
     echo original_attachments    
     echo "$original_attachments"
 
-    local attachment_md5s=$(underscore pluck --data "$original_attachments" md5)
+#FIX this line produces [null] when there are no md5s to pluck...
+#did a little fix, need to test this thing out! (was testing with bad
+#data beforels -lh
+    local attachment_md5s=$(underscore pluck --data "$doc" attachments_md5s)
     echo
     echo attachment_md5s    
     echo "$attachment_md5s"
