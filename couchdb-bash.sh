@@ -84,7 +84,7 @@ couch-upload-json-file() {
     echo "rev = $rev"
     local rev_no_quotes=$(trim "${rev//\"}")
     local attachment_url="${db_url}/${file_path}?rev=${rev_no_quotes}"
-    curl -v -X PUT "${attachment_url}" -H "Content-Type: application/json" --data-binary  "@${json}"
+    curl -X PUT "${attachment_url}" -H "Content-Type: application/json" --data-binary  "@${json}"
 }
 
 couch-upload-dir() {
