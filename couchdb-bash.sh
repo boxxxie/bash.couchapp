@@ -42,7 +42,7 @@ couch-get() {
     curl -X GET "$url"
 }
 
-couch-push(){
+couch-push() {
     local http_type="$2"
     local url="$1"
     local file="$3"
